@@ -4,7 +4,8 @@ const contratoSchema = new mongoose.Schema({
   fecha_inicio: Date,
   fecha_fin: Date,
   valor: Number,
-  cargo: String, // 👈 NUEVO CAMPO
+  cargo: String,
+  observacion: String, // ✅ Nuevo campo agregado
   empleado_id: { type: mongoose.Schema.Types.ObjectId, ref: "Empleado" },
 });
 
