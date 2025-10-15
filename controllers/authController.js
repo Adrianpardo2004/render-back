@@ -63,8 +63,13 @@ export const recuperarPassword = async (req, res) => {
       { expiresIn: "15m" }
     );
 
-    // Enlace para cambiar la contraseña
-    const link = `http://localhost:3000/cambiar-password?token=${token}`;
+    // ✅ Detectar entorno y usar URL correcta
+    const FRONTEND_URL =
+      process.env.NODE_ENV === "production"
+        ? "https://melodious-tanuki-f37cef.netlify.app"
+        : "http://localhost:3000";
+
+    const link = `${FRONTEND_URL}/cambiar-password?token=${token}`;
 
     const { data, error } = await resend.emails.send({
       from: "no-reply@resend.dev",
