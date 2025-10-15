@@ -13,7 +13,7 @@ const app = express();
 
 // 🧱 Configuración CORS
 const allowedOrigins = [
-  "https://lighthearted-churros-df6157.netlify.app",
+  "https://melodious-tanuki-f37cef.netlify.app",
   "http://localhost:5173",
 ];
 
