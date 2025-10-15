@@ -14,7 +14,7 @@ const app = express();
 
 // 🧱 Middlewares
 const allowedOrigins = [
-  "https://lighthearted-churros-df6157.netlify.app/", // tu frontend en Netlify
+  "https://lighthearted-churros-df6157.netlify.app", // tu frontend en Netlify
   "http://localhost:5173", // para desarrollo local
 ];
 
