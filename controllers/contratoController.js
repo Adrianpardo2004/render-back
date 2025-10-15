@@ -14,7 +14,7 @@ export const getContratos = async (req, res) => {
 // Crear contrato
 export const createContrato = async (req, res) => {
   try {
-    const { empleado_id, fecha_inicio, fecha_fin, valor, cargo } = req.body;
+    const { empleado_id, fecha_inicio, fecha_fin, valor, cargo, observacion } = req.body;
 
     const empleado = await Empleado.findById(empleado_id);
     if (!empleado) return res.status(404).json({ message: "Empleado no encontrado" });
@@ -24,7 +24,8 @@ export const createContrato = async (req, res) => {
       fecha_inicio,
       fecha_fin,
       valor,
-      cargo, // 👈 Incluimos el cargo
+      cargo,
+      observacion, // ✅ Guardamos observación
     });
 
     const savedContrato = await nuevoContrato.save();
@@ -33,7 +34,6 @@ export const createContrato = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
 
 // Actualizar contrato
 export const updateContrato = async (req, res) => {
