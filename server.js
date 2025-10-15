@@ -13,7 +13,16 @@ import authRoutes from "./routes/auth.js";
 const app = express();
 
 // 🧱 Middlewares
-app.use(cors());
+const allowedOrigins = [
+  "https://68ef2b9943d008335cf8301a--meek-crostata-cc3e98.netlify.app", // tu frontend en Netlify
+  "http://localhost:5173", // para desarrollo local
+];
+
+app.use(cors({
+  origin: allowedOrigins,   // 👈 aquí usamos directamente el array
+  credentials: true,        // habilita envío de cookies o headers de auth
+}));
+
 app.use(express.json());
 
 // 🔌 Conexión a MongoDB
