@@ -19,7 +19,7 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: "Contraseña incorrecta" });
 
     // ✅ Solo RRHH puede acceder
-    if (empleado.cargo !== "RRHH") {
+    if (empleado.cargo?.toUpperCase() !== "RRHH") {
       return res.status(403).json({
         message: "Acceso denegado. Solo personal de RRHH puede ingresar.",
       });
@@ -70,11 +70,12 @@ export const recuperarPassword = async (req, res) => {
       { expiresIn: "15m" }
     );
 
-    // ✅ Detectar entorno y usar URL correcta
+    // ✅ Usa variable de entorno FRONTEND_URL o fallback
     const FRONTEND_URL =
-      process.env.NODE_ENV === "production"
+      process.env.FRONTEND_URL ||
+      (process.env.NODE_ENV === "production"
         ? "https://melodious-tanuki-f37cef.netlify.app"
-        : "http://localhost:3000";
+        : "http://localhost:3000");
 
     const link = `${FRONTEND_URL}/cambiar-password?token=${token}`;
 
