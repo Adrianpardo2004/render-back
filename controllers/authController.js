@@ -18,11 +18,18 @@ export const login = async (req, res) => {
     if (!passwordValido)
       return res.status(401).json({ message: "Contraseña incorrecta" });
 
+    // ✅ Solo RRHH puede acceder
+    if (empleado.cargo !== "RRHH") {
+      return res.status(403).json({
+        message: "Acceso denegado. Solo personal de RRHH puede ingresar.",
+      });
+    }
+
     const token = jwt.sign(
       {
         id: empleado._id,
         nombre: empleado.nombre,
-        rol: empleado.rol,
+        cargo: empleado.cargo,
         correo: empleado.correo,
       },
       "claveSecretaJWT", // misma clave en verifyToken
@@ -36,7 +43,7 @@ export const login = async (req, res) => {
         id: empleado._id,
         nombre: empleado.nombre,
         correo: empleado.correo,
-        rol: empleado.rol,
+        cargo: empleado.cargo, // 👈 se usa cargo, no rol
       },
     });
   } catch (error) {
