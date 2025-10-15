@@ -11,14 +11,21 @@ export const login = async (req, res) => {
 
   try {
     const empleado = await Empleado.findOne({ correo });
-    if (!empleado) return res.status(404).json({ message: "Usuario no encontrado" });
+    if (!empleado)
+      return res.status(404).json({ message: "Usuario no encontrado" });
 
     const passwordValido = password === empleado.password;
-    if (!passwordValido) return res.status(401).json({ message: "Contraseña incorrecta" });
+    if (!passwordValido)
+      return res.status(401).json({ message: "Contraseña incorrecta" });
 
     const token = jwt.sign(
-      { id: empleado._id, nombre: empleado.nombre, rol: empleado.rol, correo: empleado.correo },
-      "claveSecretaJWT", // puedes dejarlo así fijo
+      {
+        id: empleado._id,
+        nombre: empleado.nombre,
+        rol: empleado.rol,
+        correo: empleado.correo,
+      },
+      "claveSecretaJWT", // misma clave en verifyToken
       { expiresIn: "4h" }
     );
 
@@ -34,7 +41,9 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error en login:", error);
-    res.status(500).json({ message: "Error en el servidor", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error en el servidor", error: error.message });
   }
 };
 
@@ -44,11 +53,17 @@ export const recuperarPassword = async (req, res) => {
 
   try {
     const empleado = await Empleado.findOne({ correo });
-    if (!empleado) return res.status(404).json({ message: "Correo no encontrado" });
+    if (!empleado)
+      return res.status(404).json({ message: "Correo no encontrado" });
 
-    // Crear token de 15 min
-    const token = jwt.sign({ id: empleado._id, correo: empleado.correo }, "claveSecretaJWT", { expiresIn: "15m" });
+    // Crear token válido por 15 minutos
+    const token = jwt.sign(
+      { id: empleado._id, correo: empleado.correo },
+      "claveSecretaJWT",
+      { expiresIn: "15m" }
+    );
 
+    // Enlace para cambiar la contraseña
     const link = `http://localhost:3000/cambiar-password?token=${token}`;
 
     const { data, error } = await resend.emails.send({
@@ -72,7 +87,9 @@ export const recuperarPassword = async (req, res) => {
     res.json({ message: "Correo enviado correctamente", data });
   } catch (err) {
     console.error("❌ Error en recuperación:", err);
-    res.status(500).json({ message: "Error en el servidor", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Error en el servidor", error: err.message });
   }
 };
 
@@ -83,7 +100,8 @@ export const cambiarPassword = async (req, res) => {
   try {
     const decoded = jwt.verify(token, "claveSecretaJWT");
     const empleado = await Empleado.findById(decoded.id);
-    if (!empleado) return res.status(404).json({ message: "Usuario no encontrado" });
+    if (!empleado)
+      return res.status(404).json({ message: "Usuario no encontrado" });
 
     empleado.password = nuevaPassword;
     await empleado.save();
@@ -92,5 +110,22 @@ export const cambiarPassword = async (req, res) => {
   } catch (error) {
     console.error("❌ Error al cambiar contraseña:", error);
     res.status(400).json({ message: "Token inválido o expirado" });
+  }
+};
+
+// ✅ Middleware para verificar token JWT
+export const verifyToken = (req, res, next) => {
+  const token = req.headers["authorization"]?.split(" ")[1];
+
+  if (!token) {
+    return res.status(403).json({ message: "Token no proporcionado" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, "claveSecretaJWT"); // misma clave que arriba
+    req.user = decoded;
+    next(); // continúa con la ruta protegida
+  } catch (err) {
+    return res.status(401).json({ message: "Token inválido o expirado" });
   }
 };
