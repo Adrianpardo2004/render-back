@@ -13,13 +13,12 @@ export const login = async (req, res) => {
     const empleado = await Empleado.findOne({ correo });
     if (!empleado) return res.status(404).json({ message: "Usuario no encontrado" });
 
-    const passwordValido = (password === empleado.password);
+    const passwordValido = password === empleado.password;
     if (!passwordValido) return res.status(401).json({ message: "Contraseña incorrecta" });
 
-    // Generar token JWT
     const token = jwt.sign(
       { id: empleado._id, nombre: empleado.nombre, rol: empleado.rol, correo: empleado.correo },
-      process.env.JWT_SECRET,
+      "claveSecretaJWT", // puedes dejarlo así fijo
       { expiresIn: "4h" }
     );
 
@@ -30,17 +29,16 @@ export const login = async (req, res) => {
         id: empleado._id,
         nombre: empleado.nombre,
         correo: empleado.correo,
-        rol: empleado.rol
-      }
+        rol: empleado.rol,
+      },
     });
-
   } catch (error) {
     console.error("❌ Error en login:", error);
     res.status(500).json({ message: "Error en el servidor", error: error.message });
   }
 };
 
-// 📧 Recuperar contraseña usando Resend
+// 📧 Recuperar contraseña (envía link con token)
 export const recuperarPassword = async (req, res) => {
   const { correo } = req.body;
 
@@ -48,17 +46,22 @@ export const recuperarPassword = async (req, res) => {
     const empleado = await Empleado.findOne({ correo });
     if (!empleado) return res.status(404).json({ message: "Correo no encontrado" });
 
-    // Enviar correo con la contraseña
+    // Crear token de 15 min
+    const token = jwt.sign({ id: empleado._id, correo: empleado.correo }, "claveSecretaJWT", { expiresIn: "15m" });
+
+    const link = `http://localhost:3000/cambiar-password?token=${token}`;
+
     const { data, error } = await resend.emails.send({
       from: "no-reply@resend.dev",
       to: correo,
-      subject: "Recuperación de contraseña - SIRH Molino",
+      subject: "Recuperar contraseña - SIRH Molino",
       html: `
         <h2>Recuperación de contraseña</h2>
         <p>Hola <strong>${empleado.nombre}</strong>,</p>
-        <p>Tu contraseña es: <strong>${empleado.password}</strong></p>
-        <p>Por favor, cámbiala después de iniciar sesión.</p>
-      `
+        <p>Puedes cambiar tu contraseña haciendo clic en el siguiente enlace:</p>
+        <p><a href="${link}">Cambiar mi contraseña</a></p>
+        <p>Este enlace expirará en 15 minutos.</p>
+      `,
     });
 
     if (error) {
@@ -67,24 +70,27 @@ export const recuperarPassword = async (req, res) => {
     }
 
     res.json({ message: "Correo enviado correctamente", data });
-
   } catch (err) {
     console.error("❌ Error en recuperación:", err);
     res.status(500).json({ message: "Error en el servidor", error: err.message });
   }
 };
 
-// ✅ Verificar token (para proteger Dashboard)
-export const verifyToken = (req, res) => {
-  try {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) {
-      return res.status(401).json({ message: "Token no proporcionado" });
-    }
+// 🔄 Cambiar contraseña
+export const cambiarPassword = async (req, res) => {
+  const { token, nuevaPassword } = req.body;
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    res.json({ valid: true, user: decoded });
+  try {
+    const decoded = jwt.verify(token, "claveSecretaJWT");
+    const empleado = await Empleado.findById(decoded.id);
+    if (!empleado) return res.status(404).json({ message: "Usuario no encontrado" });
+
+    empleado.password = nuevaPassword;
+    await empleado.save();
+
+    res.json({ message: "Contraseña actualizada correctamente" });
   } catch (error) {
-    res.status(401).json({ valid: false, message: "Token inválido o expirado" });
+    console.error("❌ Error al cambiar contraseña:", error);
+    res.status(400).json({ message: "Token inválido o expirado" });
   }
 };
