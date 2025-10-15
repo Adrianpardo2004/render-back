@@ -18,7 +18,7 @@ export const login = async (req, res) => {
 
     // Generar token JWT
     const token = jwt.sign(
-      { id: empleado._id, rol: empleado.rol },
+      { id: empleado._id, nombre: empleado.nombre, rol: empleado.rol, correo: empleado.correo },
       process.env.JWT_SECRET,
       { expiresIn: "4h" }
     );
@@ -26,11 +26,16 @@ export const login = async (req, res) => {
     res.json({
       message: "Inicio de sesión exitoso",
       token,
-      empleado: { id: empleado._id, nombre: empleado.nombre, rol: empleado.rol }
+      empleado: {
+        id: empleado._id,
+        nombre: empleado.nombre,
+        correo: empleado.correo,
+        rol: empleado.rol
+      }
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("❌ Error en login:", error);
     res.status(500).json({ message: "Error en el servidor", error: error.message });
   }
 };
@@ -64,7 +69,22 @@ export const recuperarPassword = async (req, res) => {
     res.json({ message: "Correo enviado correctamente", data });
 
   } catch (err) {
-    console.error(err);
+    console.error("❌ Error en recuperación:", err);
     res.status(500).json({ message: "Error en el servidor", error: err.message });
+  }
+};
+
+// ✅ Verificar token (para proteger Dashboard)
+export const verifyToken = (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "Token no proporcionado" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    res.json({ valid: true, user: decoded });
+  } catch (error) {
+    res.status(401).json({ valid: false, message: "Token inválido o expirado" });
   }
 };
