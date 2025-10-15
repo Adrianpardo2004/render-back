@@ -11,28 +11,32 @@ import authRoutes from "./routes/auth.js";
 
 const app = express();
 
-// 🧱 CORS configurado correctamente
+// 🧱 Configuración CORS
 const allowedOrigins = [
   "https://lighthearted-churros-df6157.netlify.app",
   "http://localhost:5173",
 ];
 
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      return callback(new Error("No permitido por CORS"));
-    }
-  },
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("No permitido por CORS"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 
 // 🔌 Conexión a MongoDB
-mongoose.connect(process.env.MONGO_URI)
+mongoose
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB conectado"))
   .catch((err) => console.error("❌ Error al conectar MongoDB:", err.message));
 
@@ -40,6 +44,11 @@ mongoose.connect(process.env.MONGO_URI)
 app.use("/api/empleados", empleadoRoutes);
 app.use("/api/contratos", contratoRoutes);
 app.use("/api/auth", authRoutes);
+
+// 🧭 Ruta base para verificar estado
+app.get("/", (req, res) => {
+  res.send("🚀 API SIRH Molino funcionando correctamente");
+});
 
 // 🚀 Servidor en marcha
 const PORT = process.env.PORT || 4000;
