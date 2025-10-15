@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 
-// 🧠 Cargar variables de entorno primero
 dotenv.config();
 
 import empleadoRoutes from "./routes/empleados.js";
@@ -12,15 +11,22 @@ import authRoutes from "./routes/auth.js";
 
 const app = express();
 
-// 🧱 Middlewares
+// 🧱 CORS configurado correctamente
 const allowedOrigins = [
-  "https://lighthearted-churros-df6157.netlify.app", // tu frontend en Netlify
-  "http://localhost:5173", // para desarrollo local
+  "https://lighthearted-churros-df6157.netlify.app",
+  "http://localhost:5173",
 ];
 
 app.use(cors({
-  origin: allowedOrigins,   // 👈 aquí usamos directamente el array
-  credentials: true,        // habilita envío de cookies o headers de auth
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("No permitido por CORS"));
+    }
+  },
+  credentials: true,
 }));
 
 app.use(express.json());
